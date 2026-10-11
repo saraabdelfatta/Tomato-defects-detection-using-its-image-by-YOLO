@@ -1,0 +1,12 @@
+image_path,actual_class,baseline_prediction,baseline_confidence,baseline_actual_class_probability,experiment_prediction,experiment_confidence,experiment_actual_class_probability,baseline_correct,experiment_correct
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Defect\Defect_test_0054.jpg,Defect,Defect,0.998846,0.998846,Fresh,0.750968,0.249032,True,False
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Defect\Defect_test_0059.jpg,Defect,Defect,0.533736,0.533736,Fresh,0.896711,0.103289,True,False
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Defect\Defect_test_0062.jpg,Defect,Defect,0.685343,0.685343,Fresh,0.973213,0.026787,True,False
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Defect\Defect_test_0065.jpg,Defect,Defect,0.622316,0.622316,Fresh,0.833448,0.166552,True,False
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Defect\Defect_test_0075.jpg,Defect,Defect,0.999664,0.999664,Fresh,0.537737,0.462263,True,False
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Fresh\Fresh_test_0028.jpg,Fresh,Defect,0.725084,0.274916,Fresh,0.975159,0.975159,False,True
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Fresh\Fresh_test_0051.jpg,Fresh,Defect,0.994758,0.005242,Fresh,0.977666,0.977666,False,True
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Fresh\Fresh_test_0078.jpg,Fresh,Defect,0.550409,0.449591,Fresh,0.999732,0.999732,False,True
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Fresh\Fresh_test_0083.jpg,Fresh,Defect,0.702811,0.297189,Fresh,0.872926,0.872926,False,True
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Fresh\Fresh_test_0092.jpg,Fresh,Defect,0.904197,0.095803,Fresh,0.660563,0.660563,False,True
+E:\AUC\Advanced machine learning\project\M1\datasets\tomato\test\Fresh\Fresh_test_0178.jpg,Fresh,Defect,0.68189,0.31811,Fresh,0.996727,0.996727,False,True
