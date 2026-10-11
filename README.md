@@ -44,6 +44,7 @@ project/
 ├── 09_analyze_model_predictions.py
 ├── 10_review_changed_predictions.py
 ├── 11_analyze_prediction_confidence.py
+├── 12_evaluate_test_performance.py
 ├── README.md
 ├── .venv/                         # local Python virtual environment
 └── runs/                          # generated model weights and reports
@@ -104,6 +105,7 @@ The original validation and test sets were kept free of synthetic images. The ex
 | `09_analyze_model_predictions.py` | Computes per-class precision, recall, F1-score, confusion matrices, and the list of images where model predictions differ. |
 | `10_review_changed_predictions.py` | Creates a contact sheet of disagreement images, showing the actual class and both models' predictions. |
 | `11_analyze_prediction_confidence.py` | Compares the predicted class and confidence values for disagreement images and saves a CSV report. |
+| `12_evaluate_test_performance.py` | Evaluates the baseline model on the held-out test set, saving per-image Defect probabilities, a confusion matrix, and an ROC curve. |
 
 ## 5. Important output files and folders
 
@@ -116,10 +118,41 @@ The current runs are saved under `project/runs/`.
 - Prediction analysis CSV: `runs/prediction_analysis/changed_predictions.csv`
 - Disagreement contact sheet: `runs/prediction_analysis/changed_predictions_contact_sheet.jpg`
 - Confidence analysis CSV: `runs/prediction_analysis/prediction_confidence.csv`
+- Baseline test evaluation: `runs/slide7_baseline/`
 
 Ultralytics may create nested run directories depending on the `project` setting and installed version. If a path is missing, inspect the actual run output printed by the script rather than assuming the folder layout.
 
-## 6. Requirements and installation
+## 6. Milestone 1 presentation: what to fill and where to find it
+
+The current slide deck is `../Presentation2.pptx` (relative to this repository). The main incomplete slides are 6–11. Use the following checklist to fill the existing slides; it is not necessary to add every detail if it makes the talk exceed seven minutes.
+
+| Slide | Information to add | Local file or folder to use |
+|---|---|---|
+| 2 — Problem | A visual example of Fresh and Defect tomatoes, alongside the proposed sorting workflow. Make clear the live conveyor-belt system is the goal, not the current implementation. | `Original Dataset/Fresh/` and `Original Dataset/Rotten/` |
+| 4 — Dataset | Dataset source, split sizes, class imbalance, and (optionally) example images. The prepared split has 1,986 images: train 1,389, validation 297, test 300. | `../datasets/tomato/`; examples in `Original Dataset/` |
+| 5 — Proposed work | State what is implemented versus planned: baseline and a small synthetic-scene pilot are implemented; a real belt-style test and calibrated reject/review option are not evidenced yet. | `04_create_synthetic_data.py`–`07_train_synthetic_experiment.py`; `../datasets/synthetic_multi_scenes_pilot/train/` |
+| 6 — Baseline progress | Report that YOLO11n-cls was fine-tuned and evaluated offline. Settings: 224-pixel input, batch 32, maximum 30 epochs, patience 10, seed 42. Hardware is not recorded in the run configuration. | `runs/classify/runs/baseline/args.yaml`, `results.csv`, and `results.png` |
+| 7 — Initial results | On the original 300-image test set: accuracy 96.67%, Defect recall 95.83%, Fresh recall 97.06%. Add the test confusion matrix and ROC curve. | `runs/slide7_baseline/confusion_matrix_test.png`, `runs/slide7_baseline/roc_curve_test.png`, and `runs/slide7_baseline/test_predictions.csv` |
+| 8 — Proposed-solution progress | Show sample synthetic scenes and report the pilot comparison. Synthetic pilot: 97.00% accuracy, 90.63% Defect recall. Say clearly that no real belt-style test set or calibrated reject-option results are available yet. | `../datasets/synthetic_multi_scenes_pilot/train/Fresh/`, `../datasets/synthetic_multi_scenes_pilot/train/Defect/`, and `runs/comparison_test/` |
+| 9 — Findings | Explain that the pilot gained one correct prediction overall but missed 9 Defect images versus 4 for the baseline. Use the disagreement examples if useful. | `runs/prediction_analysis/changed_predictions_contact_sheet.jpg`, `changed_predictions.csv`, and `prediction_confidence.csv` |
+| 10 — Next steps | Add actual dates and owners for remaining experiments and final deliverables. These must be agreed by the team; do not invent them. | Team schedule (not recorded in the current run files) |
+| 11 — Team contributions | List each member's actual technical work only. Do not count slide design; the code/history alone cannot establish who personally completed each task. | Confirm responsibilities with each team member |
+
+### Confusion matrix path clarification
+
+The example path `auc/basline.matrix.png` is not present in this project. The baseline **test-set** confusion matrix to use is:
+
+```text
+runs/slide7_baseline/confusion_matrix_test.png
+```
+
+Other matrices exist, but check their purpose before using them: `runs/classify/runs/baseline/confusion_matrix.png` is a training/validation run plot, while `runs/comparison_test/baseline_on_original_test/confusion_matrix.png` and `runs/comparison_test/synthetic_on_original_test/confusion_matrix.png` are the two models evaluated on the shared original test set.
+
+### Milestone deliverables and time limit
+
+Submit the completed slides, a recorded presentation of **5–7 minutes**, and be ready for the live presentation of no more than **7 minutes** (the remaining two minutes are reserved for instructor questions/feedback). Rehearse with a timer. The deck should report observed work honestly: this project currently classifies tomato images and is not a deployed detector/sorter for a live conveyor belt.
+
+## 7. Requirements and installation
 
 Use **Python 3.10 or 3.11** as a practical starting point, and use the same Python environment for all scripts. Exact compatibility depends on the installed PyTorch and Ultralytics versions.
 
@@ -159,7 +192,7 @@ python -c "import ultralytics, torch, cv2, PIL, numpy; print('Imports successful
 For reproducibility, record the versions used in the working environment:
 
 
-## 7. How to run the workflow
+## 8. How to run the workflow
 
 Run the scripts from the `project` directory, with `.venv` activated.
 
@@ -175,13 +208,14 @@ python 08_compare_test_results.py
 python 09_analyze_model_predictions.py
 python 10_review_changed_predictions.py
 python 11_analyze_prediction_confidence.py
+python 12_evaluate_test_performance.py
 ```
 
-**Do not blindly rerun all scripts in order.** Some scripts may refuse to overwrite existing output folders, retrain models, or regenerate datasets. For the current project, the baseline and experimental models have already been trained and evaluated. For analysis only, scripts 08–11 can be run against the existing weights and outputs, provided the expected paths exist.
+**Do not blindly rerun all scripts in order.** Some scripts may refuse to overwrite existing output folders, retrain models, or regenerate datasets. For the current project, the baseline and experimental models have already been trained and evaluated. For analysis only, scripts 08–12 can be run against the existing weights and outputs, provided the expected paths exist.
 
 If a script reports that a dataset or model path cannot be found, compare the path in the error with the actual folder layout on your machine.
 
-## 8. Methodology
+## 9. Methodology
 
 1. Prepare a class-folder dataset with train, validation, and test splits.
 2. Train a YOLO11n-cls baseline on the original training images.
@@ -195,7 +229,7 @@ If a script reports that a dataset or model path cannot be found, compare the pa
 
 The scene-generation step uses approximate foreground extraction, not a trained tomato detector or a validated instance-segmentation model. Consequently, synthetic crops can contain unwanted background and may create unrealistic examples.
 
-## 9. Limitations and next steps
+## 10. Limitations and next steps
 
 - The current model classifies an image; it does not locate and classify each tomato separately in a crowded scene.
 - Synthetic scene generation is a small pilot, and crop boundaries are imperfect.
@@ -213,7 +247,7 @@ Recommended future work:
 5. Consider precision-recall curves and threshold selection on validation data, especially if missing a Defect tomato is costly.
 6. If the eventual application needs individual tomato localization on a conveyor, build and evaluate an object-detection or instance-segmentation pipeline separately.
 
-## 10. References
+## 11. References
 
 - Dataset: Tomato Maturity Detection and Quality Grading, Kaggle  
   https://www.kaggle.com/datasets/sujaykapadnis/tomato-maturity-detection-and-quality-grading
