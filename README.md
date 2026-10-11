@@ -137,11 +137,6 @@ The scripts also use Python standard-library modules such as `pathlib`, `csv`, `
 
 Run these commands from the `project` directory:
 
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-```
 
 If Python 3.11 is not installed, install a compatible Python version first or use an already installed supported version.
 
@@ -163,11 +158,6 @@ python -c "import ultralytics, torch, cv2, PIL, numpy; print('Imports successful
 
 For reproducibility, record the versions used in the working environment:
 
-```powershell
-python -m pip freeze > requirements-lock.txt
-```
-
-This command creates a snapshot of the installed environment. Review it before sharing, because it may include unrelated packages.
 
 ## 7. How to run the workflow
 
