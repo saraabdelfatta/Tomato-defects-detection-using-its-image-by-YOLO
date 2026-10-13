@@ -1,0 +1,17 @@
+metric,value
+repeats,500
+full_validation_temperature,0.5783
+temperature_median_95pct,0.3044 (0.0500 to 0.8380)
+share_of_fits_below_1,1.0000
+held_out_nll_before_median_95pct,0.0483 (0.0287 to 0.0696)
+held_out_nll_after_median_95pct,0.0837 (0.0190 to 0.4991)
+held_out_nll_change_median_95pct,0.0206 (-0.0100 to 0.4368)
+share_of_splits_nll_improved,0.4940
+held_out_ece_before_median_95pct,0.0286 (0.0200 to 0.0382)
+held_out_ece_after_median_95pct,0.0181 (0.0080 to 0.0301)
+held_out_ece_change_median_95pct,-0.0088 (-0.0215 to -0.0026)
+share_of_splits_ece_improved,1.0000
+review_threshold_median_95pct,0.9877 (0.7505 to 0.9993)
+held_out_coverage_median_95pct,0.9564 (0.7785 to 1.0000)
+held_out_risk_median_95pct,0.0067 (0.0000 to 0.0069)
+share_of_splits_meeting_target_risk,0.4940
