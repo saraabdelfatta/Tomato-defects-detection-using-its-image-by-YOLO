@@ -3,28 +3,27 @@
 FILE: 07_train_synthetic_experiment.py
 
 PURPOSE:
-    Train an experimental YOLO11n-cls classifier using the
-    original training images plus synthetic multi-tomato scenes.
+    Train a conveyor-photo experiment using original training
+    images plus synthetic multi-tomato scenes.
 
 INPUT:
-    datasets/tomato_experiment_v1/
+    datasets/tomato_conveyor_experiment_v1/
         train/Fresh, train/Defect
         val/Fresh, val/Defect
 
 OUTPUT:
     A separate training run under:
-    project/runs/experiment_synthetic/
+    project/runs/experiment_conveyor/
 
 IMPORTANT:
     - Does not overwrite the baseline model.
     - Uses the original validation set.
     - The original test set is not used during training.
-    - Synthetic scenes are experimental and may contain
-      imperfect tomato segmentation.
+    - Synthetic scenes use approximate tomato segmentation.
 
 NEXT STEP:
-    Evaluate the trained experiment on the original test set
-    and compare it with the baseline.
+    Evaluate on the original test set and compare with the
+    baseline and prior synthetic pilot.
 """
 
 from pathlib import Path
@@ -36,15 +35,15 @@ from ultralytics import YOLO
 
 PROJECT_PATH = Path(__file__).resolve().parent
 DATASET_PATH = (
-    PROJECT_PATH.parent / "datasets" / "tomato_experiment_v1"
+    PROJECT_PATH.parent / "datasets" / "tomato_conveyor_experiment_v1"
 )
 
 # Start from the same pretrained model family as the baseline.
 MODEL_NAME = "yolo11n-cls.pt"
 
 # Separate output location to protect the baseline.
-RUNS_DIRECTORY = PROJECT_PATH / "runs" / "experiment_synthetic"
-RUN_NAME = "yolo11n_synthetic_pilot"
+RUNS_DIRECTORY = PROJECT_PATH / "runs" / "experiment_conveyor"
+RUN_NAME = "yolo11n_conveyor_synthetic_pilot"
 
 # ------------------------------------------------------------
 # 2. TRAINING SETTINGS
@@ -126,7 +125,7 @@ def main():
     counts = verify_dataset()
 
     print("\n" + "=" * 60)
-    print("STARTING SYNTHETIC-DATA TRAINING EXPERIMENT")
+    print("STARTING CONVEYOR SYNTHETIC-DATA EXPERIMENT")
     print("=" * 60)
     print(f"Model: {MODEL_NAME}")
     print(f"Epochs: {EPOCHS}")

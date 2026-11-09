@@ -3,30 +3,30 @@
 FILE: 05_create_synthetic_scenes.py
 
 PURPOSE:
-    Generate multi-tomato synthetic conveyor-belt scenes for the
-    Fresh-versus-Defect classification project.
+    Generate a conveyor-photo pilot by extracting tomato groups
+    from training photos and composing them onto a real belt.
 
 INPUT:
     datasets/tomato/train/Fresh
     datasets/tomato/train/Defect
-    datasets/synthetic_backgrounds
+    assets/industrial_conveyor.png
 
 OUTPUT:
-    datasets/synthetic_multi_scenes_pilot/train/Fresh
-    datasets/synthetic_multi_scenes_pilot/train/Defect
-    datasets/tomato_crop_cache/Fresh
-    datasets/tomato_crop_cache/Defect
+    datasets/synthetic_conveyor_scenes_pilot/train/Fresh
+    datasets/synthetic_conveyor_scenes_pilot/train/Defect
+    datasets/tomato_conveyor_crop_cache_v7/Fresh
+    datasets/tomato_conveyor_crop_cache_v7/Defect
 
 IMPORTANT:
     - Uses only the existing training images.
     - Processes a limited sample to reduce runtime.
-    - Caches tomato crops so later runs can reuse them.
+    - Uses tomato-color segmentation to remove the pale tabletop.
     - Keeps each synthetic scene within one class.
     - Does not modify the original dataset or test set.
 
 NEXT STEP:
-    Inspect the generated crops and scenes before using them
-    to train an experimental classifier.
+    Inspect scenes, then run scripts 06-08 to prepare, train,
+    and compare the conveyor experiment.
 """
 
 from pathlib import Path
@@ -42,12 +42,12 @@ PROJECT_PATH = Path(__file__).resolve().parent
 DATASET_ROOT = PROJECT_PATH.parent / "datasets"
 
 SOURCE_ROOT = DATASET_ROOT / "tomato" / "train"
-BACKGROUND_ROOT = DATASET_ROOT / "synthetic_backgrounds"
+BACKGROUND_PATH = PROJECT_PATH / "assets" / "industrial_conveyor.png"
 
 OUTPUT_ROOT = (
-    DATASET_ROOT / "synthetic_multi_scenes_pilot" / "train"
+    DATASET_ROOT / "synthetic_conveyor_scenes_pilot" / "train"
 )
-CACHE_ROOT = DATASET_ROOT / "tomato_crop_cache"
+CACHE_ROOT = DATASET_ROOT / "tomato_conveyor_crop_cache_v7"
 
 CLASSES = ["Fresh", "Defect"]
 
@@ -55,7 +55,7 @@ CLASSES = ["Fresh", "Defect"]
 # 2. SPEED AND IMAGE SETTINGS
 # ------------------------------------------------------------
 
-# Start small. Increase to 40 or 60 after checking the results.
+# Start with a manageable crop sample for visual review.
 MAX_SOURCE_IMAGES_PER_CLASS = 30
 
 # Number of scenes generated for each class.
@@ -63,13 +63,12 @@ SCENES_PER_CLASS = 10
 
 # Number of tomatoes placed in each scene.
 MIN_TOMATOES = 5
-MAX_TOMATOES = 12
+MAX_TOMATOES = 9
 
 SCENE_WIDTH = 640
 SCENE_HEIGHT = 480
-
-# Fewer GrabCut iterations reduce processing time.
-GRABCUT_ITERATIONS = 2
+BELT_TOP = 108
+BELT_BOTTOM = 375
 
 RANDOM_SEED = 42
 random.seed(RANDOM_SEED)
@@ -95,75 +94,75 @@ def find_images(folder):
 
 
 # ------------------------------------------------------------
-# 4. EXTRACT A TOMATO CROP USING GRABCUT
+# 4. EXTRACT A TOMATO CROP FROM ITS COLOR MASK
 # ------------------------------------------------------------
 
 def extract_crop(image_path):
     """
-    Attempt to extract the main foreground object.
+    Separate the saturated tomato group from the pale tabletop.
 
-    IMPORTANT:
-        GrabCut is an approximate segmentation method.
-        It may retain leaves or remove parts of a tomato.
-        Review the resulting crops before relying on them.
+    The source photos have a low-saturation wood background and
+    saturated tomato skins. Morphological closing fills small
+    holes in the color mask; small disconnected specks are removed.
     """
     image = cv2.imread(str(image_path))
 
     if image is None:
-        return None
+        raise OSError(f"Could not read source image: {image_path}")
 
     height, width = image.shape[:2]
 
-    # Very small images are unlikely to provide useful crops.
     if width < 40 or height < 40:
         return None
 
-    # A rectangle inset from the edges gives GrabCut a rough
-    # estimate of the foreground region.
-    margin_x = max(2, int(width * 0.05))
-    margin_y = max(2, int(height * 0.05))
-
-    rect_width = width - 2 * margin_x
-    rect_height = height - 2 * margin_y
-
-    if rect_width <= 1 or rect_height <= 1:
-        return None
-
-    mask = np.zeros((height, width), dtype=np.uint8)
-    background_model = np.zeros((1, 65), dtype=np.float64)
-    foreground_model = np.zeros((1, 65), dtype=np.float64)
-
-    try:
-        cv2.grabCut(
+    scale = min(1.0, 900 / max(width, height))
+    if scale < 1:
+        image = cv2.resize(
             image,
-            mask,
-            (
-                margin_x,
-                margin_y,
-                rect_width,
-                rect_height,
-            ),
-            background_model,
-            foreground_model,
-            GRABCUT_ITERATIONS,
-            cv2.GC_INIT_WITH_RECT,
+            (int(width * scale), int(height * scale)),
+            interpolation=cv2.INTER_AREA,
         )
-    except cv2.error:
-        return None
+        height, width = image.shape[:2]
 
-    # Definite and probable foreground pixels become opaque.
-    alpha = np.where(
-        (mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD),
-        255,
-        0,
-    ).astype(np.uint8)
+    saturation = cv2.cvtColor(
+        image, cv2.COLOR_BGR2HSV
+    )[:, :, 1]
 
-    # Reject masks that select almost nothing or almost the
-    # entire image; these often indicate poor segmentation.
+    alpha = (saturation >= 75).astype(np.uint8) * 255
+    alpha = cv2.morphologyEx(
+        alpha,
+        cv2.MORPH_OPEN,
+        cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE,
+            (5, 5),
+        ),
+    )
+    alpha = cv2.morphologyEx(
+        alpha,
+        cv2.MORPH_CLOSE,
+        cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE,
+            (21, 21),
+        ),
+    )
+
     foreground_fraction = np.count_nonzero(alpha) / alpha.size
 
-    if foreground_fraction < 0.01 or foreground_fraction > 0.95:
+    if foreground_fraction < 0.03 or foreground_fraction > 0.90:
         return None
+
+    component_count, labels, stats, _ = cv2.connectedComponentsWithStats(
+        (alpha > 0).astype(np.uint8),
+        connectivity=8,
+    )
+    if component_count > 1:
+        largest_area = int(stats[1:, cv2.CC_STAT_AREA].max())
+        keep = np.zeros_like(alpha)
+        for component in range(1, component_count):
+            area = int(stats[component, cv2.CC_STAT_AREA])
+            if area >= max(100, largest_area * 0.05):
+                keep[labels == component] = 255
+        alpha = keep
 
     points = cv2.findNonZero(alpha)
 
@@ -172,25 +171,22 @@ def extract_crop(image_path):
 
     x, y, crop_width, crop_height = cv2.boundingRect(points)
 
-    if crop_width < 15 or crop_height < 15:
+    if crop_width < 30 or crop_height < 30:
         return None
 
-    # Crop the image and its transparency mask together.
-    image_crop = image[
-        y:y + crop_height,
-        x:x + crop_width
-    ]
-    alpha_crop = alpha[
-        y:y + crop_height,
-        x:x + crop_width
-    ]
+    padding_x = max(2, int(crop_width * 0.025))
+    padding_y = max(2, int(crop_height * 0.025))
+    x1 = max(0, x - padding_x)
+    y1 = max(0, y - padding_y)
+    x2 = min(width, x + crop_width + padding_x)
+    y2 = min(height, y + crop_height + padding_y)
 
-    # Slightly soften the mask boundary.
+    image_crop = image[y1:y2, x1:x2]
+    alpha_crop = alpha[y1:y2, x1:x2]
     alpha_crop = cv2.GaussianBlur(
-        alpha_crop, (3, 3), 0.8
+        alpha_crop, (5, 5), 1.0
     )
 
-    # Store a four-channel PNG so the crop has transparency.
     rgba = cv2.cvtColor(image_crop, cv2.COLOR_BGR2BGRA)
     rgba[:, :, 3] = alpha_crop
 
@@ -203,22 +199,10 @@ def extract_crop(image_path):
 
 def prepare_crops(class_name):
     """
-    Reuse cached crops when available.
-
-    Otherwise, process only a small sample of source images.
-    Each successfully extracted crop is saved as a PNG.
+    Reuse or extract a class-specific sample of tomato groups.
     """
     cache_folder = CACHE_ROOT / class_name
     cache_folder.mkdir(parents=True, exist_ok=True)
-
-    cached_crops = sorted(cache_folder.glob("*.png"))
-
-    if cached_crops:
-        print(
-            f"  Reusing {len(cached_crops)} cached "
-            f"{class_name} crops."
-        )
-        return cached_crops
 
     source_folder = SOURCE_ROOT / class_name
     source_images = find_images(source_folder)
@@ -228,8 +212,19 @@ def prepare_crops(class_name):
             f"No training images found in: {source_folder}"
         )
 
-    random.shuffle(source_images)
-    source_images = source_images[:MAX_SOURCE_IMAGES_PER_CLASS]
+    source_images = random.sample(
+        source_images,
+        min(MAX_SOURCE_IMAGES_PER_CLASS, len(source_images)),
+    )
+
+    cached_crops = sorted(cache_folder.glob("*.png"))
+
+    if cached_crops:
+        print(
+            f"  Reusing {len(cached_crops)} cached "
+            f"{class_name} crops."
+        )
+        return cached_crops
 
     print(
         f"  Processing {len(source_images)} source images "
@@ -242,9 +237,7 @@ def prepare_crops(class_name):
         crop = extract_crop(image_path)
 
         if crop is not None:
-            output_path = (
-                cache_folder / f"crop_{len(saved):04d}.png"
-            )
+            output_path = cache_folder / f"crop_{index:04d}.png"
 
             if cv2.imwrite(str(output_path), crop):
                 saved.append(output_path)
@@ -257,10 +250,10 @@ def prepare_crops(class_name):
                 f"saved {len(saved)} crops."
             )
 
-    if not saved:
+    if len(saved) < 5:
         raise RuntimeError(
-            f"No usable crops were extracted for {class_name}. "
-            "Inspect the source images and segmentation settings."
+            f"Only {len(saved)} usable crops were extracted for "
+            f"{class_name}. Inspect the source images and masks."
         )
 
     print(f"  Cached {len(saved)} crops for {class_name}.")
@@ -272,7 +265,7 @@ def prepare_crops(class_name):
 # ------------------------------------------------------------
 
 def load_background(background_path):
-    """Load and resize one conveyor-belt background."""
+    """Load the supplied conveyor photo and resize it to scene size."""
     background = cv2.imread(str(background_path))
 
     if background is None:
@@ -309,8 +302,11 @@ def paste_crop(scene, crop_path, x, y, target_width):
         original_height * target_width / original_width
     )
 
-    # Keep the resized tomato within reasonable dimensions.
-    target_height = max(20, min(target_height, SCENE_HEIGHT // 2))
+    if target_height > SCENE_HEIGHT // 2:
+        target_height = SCENE_HEIGHT // 2
+        target_width = int(
+            original_width * target_height / original_height
+        )
 
     crop = cv2.resize(
         crop,
@@ -331,6 +327,26 @@ def paste_crop(scene, crop_path, x, y, target_width):
 
     alpha = crop[:, :, 3].astype(np.float32) / 255.0
     alpha = alpha[:, :, np.newaxis]
+
+    shadow = cv2.GaussianBlur(
+        alpha[:, :, 0],
+        (0, 0),
+        sigmaX=7,
+    )[:, :, np.newaxis]
+    shadow_x = min(x + 4, width - target_width)
+    shadow_y = min(y + 7, height - target_height)
+    shadow_roi = scene[
+        shadow_y:shadow_y + target_height,
+        shadow_x:shadow_x + target_width,
+    ].astype(np.float32)
+    scene[
+        shadow_y:shadow_y + target_height,
+        shadow_x:shadow_x + target_width,
+    ] = np.clip(
+        shadow_roi * (1.0 - shadow * 0.20),
+        0,
+        255,
+    ).astype(np.uint8)
 
     foreground = crop[:, :, :3].astype(np.float32)
     background = roi.astype(np.float32)
@@ -373,18 +389,34 @@ def generate_scenes(class_name, crop_paths, backgrounds):
         for _ in range(number_of_tomatoes):
             crop_path = random.choice(crop_paths)
 
-            # Vary sizes to simulate different distances and sizes.
-            target_width = random.randint(45, 105)
-
-            x = random.randint(
-                0, SCENE_WIDTH - target_width
+            target_width = random.randint(68, 128)
+            crop = cv2.imread(
+                str(crop_path),
+                cv2.IMREAD_UNCHANGED,
             )
-            y = random.randint(
-                0, SCENE_HEIGHT - 40
+            if crop is None:
+                raise OSError(f"Could not read cached crop: {crop_path}")
+            crop_height, crop_width = crop.shape[:2]
+            target_height = min(
+                int(crop_height * target_width / crop_width),
+                SCENE_HEIGHT // 2,
             )
+            target_width = min(target_width, SCENE_WIDTH // 3)
+            x = random.randint(0, SCENE_WIDTH - target_width)
+            max_y = max(
+                BELT_TOP,
+                min(BELT_BOTTOM - target_height, SCENE_HEIGHT - target_height),
+            )
+            y = random.randint(BELT_TOP, max_y)
 
             if paste_crop(scene, crop_path, x, y, target_width):
                 placed += 1
+
+        if placed < MIN_TOMATOES:
+            raise RuntimeError(
+                f"Only {placed} tomatoes were placed in "
+                f"{class_name} scene {scene_index + 1}."
+            )
 
         output_path = (
             output_folder / f"synthetic_{scene_index + 1:03d}.jpg"
@@ -404,23 +436,22 @@ def generate_scenes(class_name, crop_paths, backgrounds):
 
 def main():
     print("=" * 60)
-    print("FAST MULTI-TOMATO SYNTHETIC SCENE GENERATION")
+    print("CONVEYOR-PHOTO SYNTHETIC SCENE GENERATION")
     print("=" * 60)
     print(f"Project folder: {PROJECT_PATH}")
     print(f"Source dataset: {SOURCE_ROOT}")
-    print(f"Background folder: {BACKGROUND_ROOT}")
+    print(f"Background photo: {BACKGROUND_PATH}")
     print(f"Output folder: {OUTPUT_ROOT}")
     print(f"Crop cache: {CACHE_ROOT}")
     print()
 
-    backgrounds = find_images(BACKGROUND_ROOT)
-
-    if not backgrounds:
+    if not BACKGROUND_PATH.is_file():
         raise FileNotFoundError(
-            f"No background images found in {BACKGROUND_ROOT}"
+            f"Conveyor background image not found: {BACKGROUND_PATH}"
         )
+    backgrounds = [BACKGROUND_PATH]
 
-    print(f"Background images found: {len(backgrounds)}")
+    print(f"Background image: {BACKGROUND_PATH.name}")
     print(
         "Maximum source images per class: "
         f"{MAX_SOURCE_IMAGES_PER_CLASS}"

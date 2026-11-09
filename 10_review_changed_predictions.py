@@ -7,10 +7,10 @@ PURPOSE:
     synthetic-data model made different predictions.
 
 INPUT:
-    runs/prediction_analysis/changed_predictions.csv
+    runs/prediction_analysis_conveyor/changed_predictions.csv
 
 OUTPUT:
-    runs/prediction_analysis/changed_predictions_contact_sheet.jpg
+    runs/prediction_analysis_conveyor/changed_predictions_contact_sheet.jpg
 
 IMPORTANT:
     - Does not modify the original test images.
@@ -31,7 +31,7 @@ import numpy as np
 PROJECT_PATH = Path(__file__).resolve().parent
 
 ANALYSIS_FOLDER = (
-    PROJECT_PATH / "runs" / "prediction_analysis"
+    PROJECT_PATH / "runs" / "prediction_analysis_conveyor"
 )
 
 CSV_PATH = ANALYSIS_FOLDER / "changed_predictions.csv"

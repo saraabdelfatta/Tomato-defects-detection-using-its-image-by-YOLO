@@ -3,8 +3,8 @@
 FILE: 08_compare_test_results.py
 
 PURPOSE:
-    Compare the original baseline classifier against the model
-    trained with additional synthetic scenes.
+    Compare the original baseline classifier against the
+    conveyor-photo synthetic-data experiment.
 
 INPUT:
     Original test dataset:
@@ -14,8 +14,8 @@ INPUT:
     Baseline model:
         runs/classify/runs/baseline/weights/best.pt
 
-    Experimental model:
-        runs/experiment_synthetic/yolo11n_synthetic_pilot/weights/best.pt
+    Conveyor experiment:
+        runs/experiment_conveyor/yolo11n_conveyor_synthetic_pilot/weights/best.pt
 
 OUTPUT:
     Separate test-evaluation results for each model.
@@ -29,7 +29,7 @@ IMPORTANT:
       inspect per-class metrics and confusion matrices too.
 
 NEXT STEP:
-    Interpret the comparison and decide whether synthetic data
+    interpret the comparison and decide whether conveyor-scene data
     helped or whether the image-generation method needs improvement.
 """
 
@@ -51,11 +51,11 @@ BASELINE_WEIGHTS = (
 )
 
 EXPERIMENT_WEIGHTS = (
-    PROJECT_PATH / "runs" / "experiment_synthetic"
-    / "yolo11n_synthetic_pilot" / "weights" / "best.pt"
+    PROJECT_PATH / "runs" / "experiment_conveyor"
+    / "yolo11n_conveyor_synthetic_pilot" / "weights" / "best.pt"
 )
 
-EVALUATION_ROOT = PROJECT_PATH / "runs" / "comparison_test"
+EVALUATION_ROOT = PROJECT_PATH / "runs" / "comparison_test_conveyor"
 
 
 # ------------------------------------------------------------
@@ -105,7 +105,7 @@ def evaluate_model(model_name, weights_path, run_name):
 
 def main():
     print("=" * 65)
-    print("BASELINE VS. SYNTHETIC-DATA EXPERIMENT")
+    print("BASELINE VS. CONVEYOR SYNTHETIC-DATA EXPERIMENT")
     print("=" * 65)
 
     if not ORIGINAL_DATASET.is_dir():
@@ -120,9 +120,9 @@ def main():
     )
 
     experimental_accuracy = evaluate_model(
-        model_name="Synthetic-data experiment",
+        model_name="Conveyor synthetic-data experiment",
         weights_path=EXPERIMENT_WEIGHTS,
-        run_name="synthetic_on_original_test",
+        run_name="conveyor_on_original_test",
     )
 
     difference = (
@@ -133,7 +133,7 @@ def main():
     print("FINAL TEST ACCURACY COMPARISON")
     print("=" * 65)
     print(f"Baseline:             {baseline_accuracy * 100:.2f}%")
-    print(f"Synthetic experiment: {experimental_accuracy * 100:.2f}%")
+    print(f"Conveyor experiment:  {experimental_accuracy * 100:.2f}%")
     print(f"Difference:           {difference:+.2f} percentage points")
 
     if difference > 0:

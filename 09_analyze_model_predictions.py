@@ -3,14 +3,14 @@
 FILE: 09_analyze_model_predictions.py
 
 PURPOSE:
-    Analyze and compare baseline and synthetic-experiment predictions
-    on the same original test images.
+    Analyze baseline and conveyor-experiment predictions on the
+    same original test images.
 
 INPUT:
     Original test dataset: datasets/tomato/test/
     Baseline weights: runs/classify/runs/baseline/weights/best.pt
-    Experimental weights: runs/experiment_synthetic/
-                          yolo11n_synthetic_pilot/weights/best.pt
+    Conveyor weights: runs/experiment_conveyor/
+                      yolo11n_conveyor_synthetic_pilot/weights/best.pt
 
 OUTPUT:
     Per-class precision, recall, and F1-score.
@@ -43,11 +43,11 @@ BASELINE_WEIGHTS = (
 )
 
 EXPERIMENT_WEIGHTS = (
-    PROJECT_PATH / "runs" / "experiment_synthetic"
-    / "yolo11n_synthetic_pilot" / "weights" / "best.pt"
+    PROJECT_PATH / "runs" / "experiment_conveyor"
+    / "yolo11n_conveyor_synthetic_pilot" / "weights" / "best.pt"
 )
 
-OUTPUT_FOLDER = PROJECT_PATH / "runs" / "prediction_analysis"
+OUTPUT_FOLDER = PROJECT_PATH / "runs" / "prediction_analysis_conveyor"
 OUTPUT_CSV = OUTPUT_FOLDER / "changed_predictions.csv"
 
 CLASSES = ["Defect", "Fresh"]
@@ -222,12 +222,12 @@ def main():
     )
 
     experiment_predictions = predict_images(
-        EXPERIMENT_WEIGHTS, image_paths, "Synthetic experiment"
+        EXPERIMENT_WEIGHTS, image_paths, "Conveyor experiment"
     )
 
     report_metrics("BASELINE", true_labels, baseline_predictions)
     report_metrics(
-        "SYNTHETIC EXPERIMENT",
+        "CONVEYOR EXPERIMENT",
         true_labels,
         experiment_predictions,
     )

@@ -6,7 +6,7 @@ import shutil
 # 06 - PREPARE EXPERIMENTAL DATASET
 # ============================================================
 # Purpose:
-#   Combine the original training images with our pilot
+#   Combine the original training images with conveyor-photo
 #   synthetic scenes, while preserving validation and test data.
 #
 # Important:
@@ -21,10 +21,10 @@ DATASETS_PATH = PROJECT_PATH.parent / "datasets"
 
 ORIGINAL_DATASET = DATASETS_PATH / "tomato"
 SYNTHETIC_DATASET = (
-    DATASETS_PATH / "synthetic_multi_scenes_pilot" / "train"
+    DATASETS_PATH / "synthetic_conveyor_scenes_pilot" / "train"
 )
 
-EXPERIMENT_DATASET = DATASETS_PATH / "tomato_experiment_v1"
+EXPERIMENT_DATASET = DATASETS_PATH / "tomato_conveyor_experiment_v1"
 
 CLASSES = ["Fresh", "Defect"]
 SPLITS = ["train", "val", "test"]
@@ -64,7 +64,7 @@ def copy_images(source_folder, destination_folder, prefix):
 
 def main():
     print("=" * 60)
-    print("PREPARING EXPERIMENTAL CLASSIFICATION DATASET")
+    print("PREPARING CONVEYOR EXPERIMENT DATASET")
     print("=" * 60)
 
     # Safety check: never overwrite an existing experiment.

@@ -7,11 +7,11 @@ This project explores automatic image classification of tomatoes into two classe
 - **Fresh**
 - **Defect** (the original `Rotten` class was mapped to `Defect` during preparation)
 
-The baseline uses a pretrained **Ultralytics YOLO11n-cls** image-classification model and fine-tunes it on the prepared tomato dataset. A small synthetic-data experiment was then performed by composing multiple tomato crops onto generated belt-like backgrounds.
+The baseline uses a pretrained **Ultralytics YOLO11n-cls** image-classification model and fine-tunes it on the prepared tomato dataset. Two small synthetic-data pilots were then tested: one using generated belt-like backgrounds and a separate one compositing multiple class-matched tomato crops onto the supplied industrial conveyor photo.
 
 **Important:** this is currently an image-classification prototype. It does not yet detect individual tomatoes in a live conveyor-belt scene, draw bounding boxes, or perform reliable instance segmentation. Object detection and improved cropping/segmentation remain future work.
 
-## 2. Current experimental results
+## 2. Results from the earlier synthetic-data pilot
 
 Both models were evaluated on the same original test split of 300 images.
 
@@ -25,7 +25,27 @@ Both models were evaluated on the same original test split of 300 images.
 
 The experimental model improved overall test accuracy by one correct prediction, but it missed more Defect tomatoes. Therefore, the 0.33-percentage-point accuracy increase is not enough to conclude that synthetic data improved the system overall. For a sorting application, Defect recall is especially important.
 
-The synthetic-data experiment is a small pilot, not a final result. Repeatability across multiple training seeds and a more realistic synthetic-image pipeline have not yet been established.
+The earlier synthetic-data experiment is a small pilot, not a final result. The separate conveyor-photo pilot results are reported below.
+
+### Conveyor-photo pilot
+
+The pilot contains 10 Fresh and 10 Defect synthetic scenes, with 5–9 class-matched tomato crops per scene. These 20 scenes were added to the training split only; the validation and 300-image test splits are unchanged. Training stopped early after 11 epochs, with the best checkpoint from epoch 6 (97.64% validation accuracy). This is one run with seed 42.
+
+| Test metric | Baseline | Conveyor-photo experiment |
+|---|---:|---:|
+| Top-1 accuracy | 96.67% (290/300) | 98.00% (294/300) |
+| Defect precision | 93.88% | 96.88% |
+| Defect recall | 95.83% (92/96) | 96.88% (93/96) |
+| Defect F1 | 94.85% | 96.88% |
+| Fresh precision | 98.02% | 98.53% |
+| Fresh recall | 97.06% (198/204) | 98.53% (201/204) |
+| Fresh F1 | 97.54% | 98.53% |
+| Defect images predicted as Fresh | 4 | 3 |
+| Fresh images predicted as Defect | 6 | 3 |
+
+On this test set, the conveyor-photo model made four more correct predictions overall; among the eight images where predictions differed, six changed from wrong to correct and two changed from correct to wrong. This is an encouraging pilot result, not proof of general improvement: it uses one training seed and a small set of synthetic scenes, and the color-mask crop boundaries remain approximate. The model is still an image classifier, not an individual-tomato detector for a live conveyor.
+
+Detailed test outputs are under `runs/comparison_test_conveyor/`; per-image disagreements and confidence values are under `runs/prediction_analysis_conveyor/`.
 
 ## 3. Repository and dataset layout
 
@@ -45,6 +65,8 @@ project/
 ├── 10_review_changed_predictions.py
 ├── 11_analyze_prediction_confidence.py
 ├── 12_evaluate_test_performance.py
+├── assets/
+│   └── industrial_conveyor.png
 ├── README.md
 ├── .venv/                         # local Python virtual environment
 └── runs/                          # generated model weights and reports
@@ -63,7 +85,24 @@ datasets/
 ├── synthetic_backgrounds/
 ├── synthetic_multi_scenes_pilot/
 ├── tomato_crop_cache/
-└── tomato_experiment_v1/
+├── tomato_experiment_v1/
+│   ├── train/
+│   │   ├── Fresh/
+│   │   └── Defect/
+│   ├── val/
+│   │   ├── Fresh/
+│   │   └── Defect/
+│   └── test/
+│       ├── Fresh/
+│       └── Defect/
+├── synthetic_conveyor_scenes_pilot/
+│   └── train/
+│       ├── Fresh/
+│       └── Defect/
+├── tomato_conveyor_crop_cache_v7/
+│   ├── Fresh/
+│   └── Defect/
+└── tomato_conveyor_experiment_v1/
     ├── train/
     │   ├── Fresh/
     │   └── Defect/
@@ -98,11 +137,11 @@ The original validation and test sets were kept free of synthetic images. The ex
 | `02_train_baseline.py` | Fine-tunes the baseline YOLO11n-cls model on the original prepared training data. |
 | `03_evaluate_baseline.py` | Evaluates the baseline model and reports classification metrics on the held-out test set. |
 | `04_create_synthetic_data.py` | Generates prototype belt-like background images for synthetic-scene composition. |
-| `05_create_synthetic_scenes.py` | Creates pilot scenes by extracting tomato crops and placing multiple crops on generated backgrounds. Cropping is approximate and may leave background fragments. |
-| `06_prepare_experiment_data.py` | Builds the experimental dataset by adding synthetic scenes to the training data while retaining original validation and test images. |
-| `07_train_synthetic_experiment.py` | Trains a separate YOLO11n-cls model using the experimental dataset. It does not overwrite the baseline weights. |
-| `08_compare_test_results.py` | Evaluates the baseline and experimental models on the same original test split and prints their Top-1 accuracy comparison. |
-| `09_analyze_model_predictions.py` | Computes per-class precision, recall, F1-score, confusion matrices, and the list of images where model predictions differ. |
+| `05_create_synthetic_scenes.py` | Extracts class-specific tomato groups from training images with a saturation mask and composites them onto `assets/industrial_conveyor.png`. Masks are approximate and must be reviewed. |
+| `06_prepare_experiment_data.py` | Builds a separate conveyor experiment dataset with synthetic scenes in training only; validation and test remain original. |
+| `07_train_synthetic_experiment.py` | Trains a separate YOLO11n-cls conveyor experiment without overwriting baseline or earlier pilot weights. |
+| `08_compare_test_results.py` | Evaluates the baseline and conveyor experiment on the same original test split. |
+| `09_analyze_model_predictions.py` | Computes per-class precision, recall, F1-score, confusion matrices, and the list of images where baseline and conveyor-model predictions differ. |
 | `10_review_changed_predictions.py` | Creates a contact sheet of disagreement images, showing the actual class and both models' predictions. |
 | `11_analyze_prediction_confidence.py` | Compares the predicted class and confidence values for disagreement images and saves a CSV report. |
 | `12_evaluate_test_performance.py` | Evaluates the baseline model on the held-out test set, saving per-image Defect probabilities, a confusion matrix, and an ROC curve. |
@@ -114,10 +153,13 @@ The current runs are saved under `project/runs/`.
 - Baseline weights: `runs/classify/runs/baseline/weights/best.pt`
 - Baseline last checkpoint: `runs/classify/runs/baseline/weights/last.pt`
 - Synthetic experiment best weights: `runs/experiment_synthetic/yolo11n_synthetic_pilot/weights/best.pt`
-- Test comparison outputs: `runs/comparison_test/`
-- Prediction analysis CSV: `runs/prediction_analysis/changed_predictions.csv`
-- Disagreement contact sheet: `runs/prediction_analysis/changed_predictions_contact_sheet.jpg`
-- Confidence analysis CSV: `runs/prediction_analysis/prediction_confidence.csv`
+- Conveyor experiment best weights: `runs/experiment_conveyor/yolo11n_conveyor_synthetic_pilot/weights/best.pt`
+- Conveyor synthetic scenes: `../datasets/synthetic_conveyor_scenes_pilot/train/`
+- Earlier pilot comparison outputs: `runs/comparison_test/`
+- Conveyor comparison outputs: `runs/comparison_test_conveyor/`
+- Conveyor prediction analysis CSV: `runs/prediction_analysis_conveyor/changed_predictions.csv`
+- Conveyor disagreement contact sheet: `runs/prediction_analysis_conveyor/changed_predictions_contact_sheet.jpg`
+- Conveyor confidence analysis CSV: `runs/prediction_analysis_conveyor/prediction_confidence.csv`
 - Baseline test evaluation: `runs/slide7_baseline/`
 
 Ultralytics may create nested run directories depending on the `project` setting and installed version. If a path is missing, inspect the actual run output printed by the script rather than assuming the folder layout.
@@ -130,11 +172,11 @@ The current slide deck is `../Presentation2.pptx` (relative to this repository).
 |---|---|---|
 | 2 — Problem | A visual example of Fresh and Defect tomatoes, alongside the proposed sorting workflow. Make clear the live conveyor-belt system is the goal, not the current implementation. | `Original Dataset/Fresh/` and `Original Dataset/Rotten/` |
 | 4 — Dataset | Dataset source, split sizes, class imbalance, and (optionally) example images. The prepared split has 1,986 images: train 1,389, validation 297, test 300. | `../datasets/tomato/`; examples in `Original Dataset/` |
-| 5 — Proposed work | State what is implemented versus planned: baseline and a small synthetic-scene pilot are implemented; a real belt-style test and calibrated reject/review option are not evidenced yet. | `04_create_synthetic_data.py`–`07_train_synthetic_experiment.py`; `../datasets/synthetic_multi_scenes_pilot/train/` |
+| 5 — Proposed work | State what is implemented versus planned: baseline, an initial synthetic pilot, and a conveyor-photo pilot are implemented; a real belt-style test and calibrated reject/review option are not evidenced yet. | `05_create_synthetic_scenes.py`–`08_compare_test_results.py`; `../datasets/synthetic_conveyor_scenes_pilot/train/` |
 | 6 — Baseline progress | Report that YOLO11n-cls was fine-tuned and evaluated offline. Settings: 224-pixel input, batch 32, maximum 30 epochs, patience 10, seed 42. Hardware is not recorded in the run configuration. | `runs/classify/runs/baseline/args.yaml`, `results.csv`, and `results.png` |
 | 7 — Initial results | On the original 300-image test set: accuracy 96.67%, Defect recall 95.83%, Fresh recall 97.06%. Add the test confusion matrix and ROC curve. | `runs/slide7_baseline/confusion_matrix_test.png`, `runs/slide7_baseline/roc_curve_test.png`, and `runs/slide7_baseline/test_predictions.csv` |
-| 8 — Proposed-solution progress | Show sample synthetic scenes and report the pilot comparison. Synthetic pilot: 97.00% accuracy, 90.63% Defect recall. Say clearly that no real belt-style test set or calibrated reject-option results are available yet. | `../datasets/synthetic_multi_scenes_pilot/train/Fresh/`, `../datasets/synthetic_multi_scenes_pilot/train/Defect/`, and `runs/comparison_test/` |
-| 9 — Findings | Explain that the pilot gained one correct prediction overall but missed 9 Defect images versus 4 for the baseline. Use the disagreement examples if useful. | `runs/prediction_analysis/changed_predictions_contact_sheet.jpg`, `changed_predictions.csv`, and `prediction_confidence.csv` |
+| 8 — Proposed-solution progress | Show the conveyor-photo scenes and measured test results: 98.00% accuracy and 96.88% Defect recall versus the baseline's 96.67% and 95.83%. Clearly state that no real belt-style test set or calibrated reject-option results are available yet. | `../datasets/synthetic_conveyor_scenes_pilot/train/Fresh/`, `../datasets/synthetic_conveyor_scenes_pilot/train/Defect/`, and `runs/comparison_test_conveyor/` |
+| 9 — Findings | Compare the conveyor model with the baseline using its measured metrics; do not assume the previous pilot's result carries over. | `runs/prediction_analysis_conveyor/changed_predictions_contact_sheet.jpg`, `changed_predictions.csv`, and `prediction_confidence.csv` |
 | 10 — Next steps | Add actual dates and owners for remaining experiments and final deliverables. These must be agreed by the team; do not invent them. | Team schedule (not recorded in the current run files) |
 | 11 — Team contributions | List each member's actual technical work only. Do not count slide design; the code/history alone cannot establish who personally completed each task. | Confirm responsibilities with each team member |
 
@@ -146,7 +188,7 @@ The example path `auc/basline.matrix.png` is not present in this project. The ba
 runs/slide7_baseline/confusion_matrix_test.png
 ```
 
-Other matrices exist, but check their purpose before using them: `runs/classify/runs/baseline/confusion_matrix.png` is a training/validation run plot, while `runs/comparison_test/baseline_on_original_test/confusion_matrix.png` and `runs/comparison_test/synthetic_on_original_test/confusion_matrix.png` are the two models evaluated on the shared original test set.
+Other matrices exist, but check their purpose before using them: `runs/classify/runs/baseline/confusion_matrix.png` is a training/validation run plot. The earlier pilot uses `runs/comparison_test/`; the conveyor experiment uses `runs/comparison_test_conveyor/baseline_on_original_test/confusion_matrix.png` and `runs/comparison_test_conveyor/conveyor_on_original_test/confusion_matrix.png`.
 
 ### Milestone deliverables and time limit
 
@@ -200,7 +242,6 @@ Run the scripts from the `project` directory, with `.venv` activated.
 python 01_prepare_data.py
 python 02_train_baseline.py
 python 03_evaluate_baseline.py
-python 04_create_synthetic_data.py
 python 05_create_synthetic_scenes.py
 python 06_prepare_experiment_data.py
 python 07_train_synthetic_experiment.py
@@ -211,7 +252,9 @@ python 11_analyze_prediction_confidence.py
 python 12_evaluate_test_performance.py
 ```
 
-**Do not blindly rerun all scripts in order.** Some scripts may refuse to overwrite existing output folders, retrain models, or regenerate datasets. For the current project, the baseline and experimental models have already been trained and evaluated. For analysis only, scripts 08–12 can be run against the existing weights and outputs, provided the expected paths exist.
+**Do not blindly rerun all scripts in order.** Some scripts may refuse to overwrite existing output folders, retrain models, or regenerate datasets. In this workspace, the baseline and both synthetic pilots have already been run; the conveyor experiment's dataset, model, test comparison, and analyses are saved in their separate folders. For a fresh run, use scripts 05–08 for the conveyor experiment and scripts 09–11 for its prediction analysis. Script 04 is only needed for the earlier generated-background pilot.
+
+`04_create_synthetic_data.py` generates the backgrounds for the earlier pilot only; it is not required for the conveyor-photo workflow.
 
 If a script reports that a dataset or model path cannot be found, compare the path in the error with the actual folder layout on your machine.
 
@@ -220,14 +263,14 @@ If a script reports that a dataset or model path cannot be found, compare the pa
 1. Prepare a class-folder dataset with train, validation, and test splits.
 2. Train a YOLO11n-cls baseline on the original training images.
 3. Evaluate the baseline on the original held-out test set.
-4. Generate prototype conveyor-belt-like backgrounds.
-5. Compose multiple tomato crops onto backgrounds to produce a small synthetic-scene pilot.
-6. Add synthetic scenes to the training set only.
-7. Train a separate experimental classifier.
-8. Evaluate both models on the same original test images.
-9. Inspect per-class errors, disagreement images, and confidence values.
+4. The earlier pilot generated belt-like backgrounds; those outputs are retained for historical comparison.
+5. Composite class-matched tomato crops onto the provided industrial conveyor photo for the new pilot.
+6. Add the new synthetic scenes to training only; preserve original validation and test sets.
+7. Train a separate conveyor synthetic-data classifier.
+8. Evaluate the baseline and conveyor experiment on the same original test images.
+9. Inspect per-class errors, disagreement images, confidence values, and the generated scenes.
 
-The scene-generation step uses approximate foreground extraction, not a trained tomato detector or a validated instance-segmentation model. Consequently, synthetic crops can contain unwanted background and may create unrealistic examples.
+The conveyor scene-generation step uses a saturation mask, not a trained tomato detector or validated instance-segmentation model. It is tailored to the pale tabletop in these source photos; inspect every generated crop/scene for missing tomato pixels or background fragments before treating the experiment as evidence.
 
 ## 10. Limitations and next steps
 

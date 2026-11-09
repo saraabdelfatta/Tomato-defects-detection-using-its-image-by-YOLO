@@ -3,16 +3,16 @@
 FILE: 11_analyze_prediction_confidence.py
 
 PURPOSE:
-    Compare baseline and synthetic-experiment confidence scores
-    for the 11 test images on which their predictions differed.
+    Compare baseline and conveyor-experiment confidence scores
+    on test images where their predictions differed.
 
 INPUT:
-    runs/prediction_analysis/changed_predictions.csv
+    runs/prediction_analysis_conveyor/changed_predictions.csv
     Original baseline model weights.
     Synthetic-experiment model weights.
 
 OUTPUT:
-    runs/prediction_analysis/prediction_confidence.csv
+    runs/prediction_analysis_conveyor/prediction_confidence.csv
 
 IMPORTANT:
     - Analysis only; no training occurs.
@@ -37,7 +37,7 @@ from ultralytics import YOLO
 PROJECT_PATH = Path(__file__).resolve().parent
 
 ANALYSIS_FOLDER = (
-    PROJECT_PATH / "runs" / "prediction_analysis"
+    PROJECT_PATH / "runs" / "prediction_analysis_conveyor"
 )
 
 INPUT_CSV = ANALYSIS_FOLDER / "changed_predictions.csv"
@@ -49,8 +49,8 @@ BASELINE_WEIGHTS = (
 )
 
 EXPERIMENT_WEIGHTS = (
-    PROJECT_PATH / "runs" / "experiment_synthetic"
-    / "yolo11n_synthetic_pilot" / "weights" / "best.pt"
+    PROJECT_PATH / "runs" / "experiment_conveyor"
+    / "yolo11n_conveyor_synthetic_pilot" / "weights" / "best.pt"
 )
 
 IMAGE_SIZE = 224
@@ -152,7 +152,7 @@ def main():
     )
 
     experiment_model = load_model(
-        EXPERIMENT_WEIGHTS, "Synthetic experiment model"
+        EXPERIMENT_WEIGHTS, "Conveyor experiment model"
     )
 
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
