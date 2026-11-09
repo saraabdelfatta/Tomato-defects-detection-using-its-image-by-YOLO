@@ -56,7 +56,6 @@ project/
 ├── 01_prepare_data.py
 ├── 02_train_baseline.py
 ├── 03_evaluate_baseline.py
-├── 04_create_synthetic_data.py
 ├── 05_create_synthetic_scenes.py
 ├── 06_prepare_experiment_data.py
 ├── 07_train_synthetic_experiment.py
@@ -136,7 +135,6 @@ The original validation and test sets were kept free of synthetic images. The ex
 | `01_prepare_data.py` | Organizes the source images into Fresh/Defect train, validation, and test splits. The source `Rotten` class is mapped to `Defect`. It also records a split manifest. |
 | `02_train_baseline.py` | Fine-tunes the baseline YOLO11n-cls model on the original prepared training data. |
 | `03_evaluate_baseline.py` | Evaluates the baseline model and reports classification metrics on the held-out test set. |
-| `04_create_synthetic_data.py` | Generates prototype belt-like background images for synthetic-scene composition. |
 | `05_create_synthetic_scenes.py` | Extracts class-specific tomato groups from training images with a saturation mask and composites them onto `assets/industrial_conveyor.png`. Masks are approximate and must be reviewed. |
 | `06_prepare_experiment_data.py` | Builds a separate conveyor experiment dataset with synthetic scenes in training only; validation and test remain original. |
 | `07_train_synthetic_experiment.py` | Trains a separate YOLO11n-cls conveyor experiment without overwriting baseline or earlier pilot weights. |
@@ -203,7 +201,6 @@ Use **Python 3.10 or 3.11** as a practical starting point, and use the same Pyth
 - **ultralytics** — YOLO model loading, training, prediction, and evaluation.
 - **torch** — model training and inference backend; normally installed as an Ultralytics dependency.
 - **opencv-python** — image loading, resizing, image composition, and contact-sheet generation.
-- **Pillow** — creation and editing of synthetic background images.
 - **numpy** — array and image operations.
 
 The scripts also use Python standard-library modules such as `pathlib`, `csv`, `math`, and `random`; these do not need separate installation. Pandas is not required by the scripts described here.
@@ -252,9 +249,9 @@ python 11_analyze_prediction_confidence.py
 python 12_evaluate_test_performance.py
 ```
 
-**Do not blindly rerun all scripts in order.** Some scripts may refuse to overwrite existing output folders, retrain models, or regenerate datasets. In this workspace, the baseline and both synthetic pilots have already been run; the conveyor experiment's dataset, model, test comparison, and analyses are saved in their separate folders. For a fresh run, use scripts 05–08 for the conveyor experiment and scripts 09–11 for its prediction analysis. Script 04 is only needed for the earlier generated-background pilot.
+**Do not blindly rerun all scripts in order.** Some scripts may refuse to overwrite existing output folders, retrain models, or regenerate datasets. In this workspace, the baseline and both synthetic pilots have already been run; the conveyor experiment's dataset, model, test comparison, and analyses are saved in their separate folders. For a fresh run, use scripts 05–08 for the conveyor experiment and scripts 09–11 for its prediction analysis.
 
-`04_create_synthetic_data.py` generates the backgrounds for the earlier pilot only; it is not required for the conveyor-photo workflow.
+The earlier generated-background pilot is retained as a historical experiment. The current conveyor-photo workflow uses the supplied `assets/industrial_conveyor.png` background directly.
 
 If a script reports that a dataset or model path cannot be found, compare the path in the error with the actual folder layout on your machine.
 
