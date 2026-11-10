@@ -47,6 +47,19 @@ On this test set, the conveyor-photo model made four more correct predictions ov
 
 Detailed test outputs are under `runs/comparison_test_conveyor/`; per-image disagreements and confidence values are under `runs/prediction_analysis_conveyor/`.
 
+### Synthetic-data scaling and configuration comparison
+
+The scaling experiment trained models with 100, 250, 500, and 1,000 additional synthetic scenes. The amount of synthetic data was selected using validation results only: N=100, 250, and 1,000 tied for the highest Defect recall (97.89%), and N=100 had the highest Fresh recall among those candidates (100%). The test set was then used for the final comparison below.
+
+| Test configuration | Models | Accuracy | Defect recall | Fresh recall | Missed Defects | False alarms |
+|---|---:|---:|---:|---:|---:|---:|
+| YOLO11 baseline | 1 | 96.67% (290/300) | 95.83% (92/96) | 97.06% (198/204) | 4 | 6 |
+| + C1 (N=100 synthetic scenes) | 1 | 98.33% (295/300) | 97.92% (94/96) | 98.53% (201/204) | 2 | 3 |
+| + C2 (five-fold ensemble) | 5 | 98.33% (295/300) | 95.83% (92/96) | 99.51% (203/204) | 4 | 1 |
+| + C1 + C2 | 6 | 97.00% (291/300) | 97.92% (94/96) | 96.57% (197/204) | 2 | 7 |
+
+The C1 and C2 rows use a 0.5 threshold. The combined C1+C2 threshold (0.125) was selected on validation data. These are results from the available trained models and one fixed test split; they do not establish that the changes generalize across training seeds or datasets. In particular, C2 reduced false alarms but did not improve Defect recall over the baseline, while the combined configuration had more false alarms than C1 alone.
+
 ## 3. Repository and dataset layout
 
 The project was developed on Windows. The paths below describe the current development layout; change them if the project is moved to another computer.
@@ -64,6 +77,15 @@ project/
 ├── 10_review_changed_predictions.py
 ├── 11_analyze_prediction_confidence.py
 ├── 12_evaluate_test_performance.py
+├── 13_build_scaling_datasets.py
+├── 14_plot_E_scaling.py
+├── 15_train_scaling_runs.py
+├── 16_plot_synthetic_examples.py
+├── 17_plot_prediction_grid.py
+├── 18_evaluate_all_configs.py
+├── 19_plot_A_B_updated.py
+├── 20_plot_training_curves.py
+├── tomato_utils.py
 ├── assets/
 │   └── industrial_conveyor.png
 ├── README.md
@@ -98,6 +120,13 @@ datasets/
 │   └── train/
 │       ├── Fresh/
 │       └── Defect/
+├── synthetic_scenes_v2/
+│   ├── Fresh/
+│   └── Defect/
+├── tomato_scaling_N100/
+├── tomato_scaling_N250/
+├── tomato_scaling_N500/
+├── tomato_scaling_N1000/
 ├── tomato_conveyor_crop_cache_v7/
 │   ├── Fresh/
 │   └── Defect/
@@ -143,6 +172,15 @@ The original validation and test sets were kept free of synthetic images. The ex
 | `10_review_changed_predictions.py` | Creates a contact sheet of disagreement images, showing the actual class and both models' predictions. |
 | `11_analyze_prediction_confidence.py` | Compares the predicted class and confidence values for disagreement images and saves a CSV report. |
 | `12_evaluate_test_performance.py` | Evaluates the baseline model on the held-out test set, saving per-image Defect probabilities, a confusion matrix, and an ROC curve. |
+| `13_build_scaling_datasets.py` | Builds nested training datasets with 100, 250, 500, or 1,000 synthetic scenes; real validation and test images are kept unchanged. |
+| `14_plot_E_scaling.py` | Compares the baseline and scaling-run recall on validation data and saves the values used to select the synthetic-data amount. |
+| `15_train_scaling_runs.py` | Trains the four scaling datasets using the baseline's image size, batch size, epoch limit, patience, and seed. |
+| `16_plot_synthetic_examples.py` | Creates a contact sheet of historical pilot scenes and the larger v2 scenes. |
+| `17_plot_prediction_grid.py` | Visualizes all errors and selected correct/borderline test predictions from the five-fold calibrated ensemble. |
+| `18_evaluate_all_configs.py` | Selects the synthetic-data amount using validation recall, then compares the baseline, C1, C2, and combined models on the held-out test set. |
+| `19_plot_A_B_updated.py` | Creates accuracy/Defect-recall and confusion-matrix plots from the metrics produced by script 18. |
+| `20_plot_training_curves.py` | Plots baseline and selected scaling-model training curves. |
+| `tomato_utils.py` | Provides shared paths, image listing, inference, metrics, and validation-based scaling-size selection. Importing it does not create output folders. |
 
 ## 5. Important output files and folders
 
@@ -159,6 +197,9 @@ The current runs are saved under `project/runs/`.
 - Conveyor disagreement contact sheet: `runs/prediction_analysis_conveyor/changed_predictions_contact_sheet.jpg`
 - Conveyor confidence analysis CSV: `runs/prediction_analysis_conveyor/prediction_confidence.csv`
 - Baseline test evaluation: `runs/slide7_baseline/`
+- Scaling validation results and plot: `runs/milestone2_plots/plotE_scaling_validation.csv` and `E_synthetic_scaling_validation.png`
+- All-configuration test metrics: `runs/milestone2_plots/metrics_all.csv`
+- Configuration comparison plots: `runs/milestone2_plots/A_accuracy_defect_recall.png` and `B_confusion_all.png`
 
 Ultralytics may create nested run directories depending on the `project` setting and installed version. If a path is missing, inspect the actual run output printed by the script rather than assuming the folder layout.
 
@@ -252,6 +293,29 @@ python 12_evaluate_test_performance.py
 **Do not blindly rerun all scripts in order.** Some scripts may refuse to overwrite existing output folders, retrain models, or regenerate datasets. In this workspace, the baseline and both synthetic pilots have already been run; the conveyor experiment's dataset, model, test comparison, and analyses are saved in their separate folders. For a fresh run, use scripts 05–08 for the conveyor experiment and scripts 09–11 for its prediction analysis.
 
 The earlier generated-background pilot is retained as a historical experiment. The current conveyor-photo workflow uses the supplied `assets/industrial_conveyor.png` background directly.
+
+To run the optional scaling experiment, generate and build its separate synthetic datasets first (the existing conveyor pilot contains only 10 scenes per class):
+
+```powershell
+python 05_create_synthetic_scenes.py --scenes-per-class 500 --output-dir ..\datasets\synthetic_scenes_v2
+python 13_build_scaling_datasets.py
+python 15_train_scaling_runs.py
+python 14_plot_E_scaling.py
+python 16_plot_synthetic_examples.py
+python 20_plot_training_curves.py
+```
+
+This writes the larger scenes to `../datasets/synthetic_scenes_v2/` without replacing the existing pilot. The generator uses the existing training images and crop cache. Inspect generated scenes before using them in training. Script 14 records validation results used to select the C1 dataset size; the held-out test set is reserved for the final comparison.
+
+Scripts 17–19 also require the five fold-model weights and out-of-fold calibration summary created by `contribution_2/16_train_calibration_folds.py` and `contribution_2/17_out_of_fold_calibration.py`. After the scaling models and calibration files are available, run:
+
+```powershell
+python 17_plot_prediction_grid.py
+python 18_evaluate_all_configs.py
+python 19_plot_A_B_updated.py
+```
+
+Script 18 selects the C1 size from script 14's validation results and uses the out-of-fold calibration values for C2. The C1+C2 threshold is selected from validation probabilities; the test set is only used for reporting final metrics. `tomato_utils.py` contains shared functions and does not create its output directory merely by being imported.
 
 If a script reports that a dataset or model path cannot be found, compare the path in the error with the actual folder layout on your machine.
 

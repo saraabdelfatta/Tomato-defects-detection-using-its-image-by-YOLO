@@ -30,6 +30,7 @@ NEXT STEP:
 """
 
 from pathlib import Path
+import argparse
 import random
 import cv2
 import numpy as np
@@ -367,12 +368,13 @@ def paste_crop(scene, crop_path, x, y, target_width):
 # 8. GENERATE SYNTHETIC SCENES
 # ------------------------------------------------------------
 
-def generate_scenes(class_name, crop_paths, backgrounds):
+def generate_scenes(class_name, crop_paths, backgrounds, output_root,
+                    scenes_per_class):
     """Create synthetic scenes containing only one class."""
-    output_folder = OUTPUT_ROOT / class_name
+    output_folder = output_root / class_name
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    for scene_index in range(SCENES_PER_CLASS):
+    for scene_index in range(scenes_per_class):
         background_path = random.choice(backgrounds)
         scene = load_background(background_path)
 
@@ -425,7 +427,7 @@ def generate_scenes(class_name, crop_paths, backgrounds):
         if cv2.imwrite(str(output_path), scene):
             print(
                 f"  {class_name} scene "
-                f"{scene_index + 1}/{SCENES_PER_CLASS} "
+                f"{scene_index + 1}/{scenes_per_class} "
                 f"saved ({placed} tomatoes): {output_path.name}"
             )
 
@@ -434,14 +436,17 @@ def generate_scenes(class_name, crop_paths, backgrounds):
 # 9. MAIN
 # ------------------------------------------------------------
 
-def main():
+def main(scenes_per_class=SCENES_PER_CLASS, output_root=OUTPUT_ROOT):
+    if scenes_per_class < 1:
+        raise ValueError("scenes_per_class must be at least 1")
+
     print("=" * 60)
     print("CONVEYOR-PHOTO SYNTHETIC SCENE GENERATION")
     print("=" * 60)
     print(f"Project folder: {PROJECT_PATH}")
     print(f"Source dataset: {SOURCE_ROOT}")
     print(f"Background photo: {BACKGROUND_PATH}")
-    print(f"Output folder: {OUTPUT_ROOT}")
+    print(f"Output folder: {output_root}")
     print(f"Crop cache: {CACHE_ROOT}")
     print()
 
@@ -472,15 +477,33 @@ def main():
             class_name,
             crop_cache[class_name],
             backgrounds,
+            output_root,
+            scenes_per_class,
         )
         print()
 
     print("=" * 60)
     print("GENERATION FINISHED")
-    print(f"Scenes saved under: {OUTPUT_ROOT}")
+    print(f"Scenes saved under: {output_root}")
     print(f"Reusable crops saved under: {CACHE_ROOT}")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Generate class-specific synthetic conveyor scenes."
+    )
+    parser.add_argument(
+        "--scenes-per-class",
+        type=int,
+        default=SCENES_PER_CLASS,
+        help=f"Scenes to generate for each class (default: {SCENES_PER_CLASS}).",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=OUTPUT_ROOT,
+        help=f"Output directory (default: {OUTPUT_ROOT}).",
+    )
+    args = parser.parse_args()
+    main(args.scenes_per_class, args.output_dir)
