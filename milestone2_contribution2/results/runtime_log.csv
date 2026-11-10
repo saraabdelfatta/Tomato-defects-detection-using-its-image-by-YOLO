@@ -1,0 +1,8 @@
+step,seconds,minutes,note,logged_at
+predict_baseline,16.9,0.28,,2026-11-09 14:01:11
+predict_folds,47.7,0.79,cached files are reused if present,2026-11-09 14:03:01
+train_weighted,636.3,10.61,device=mps,2026-11-09 14:11:23
+predict_weighted,7.7,0.13,,2026-11-09 14:11:31
+train_focal,609.5,10.16,device=mps,2026-11-09 14:21:43
+predict_focal,8.3,0.14,,2026-11-09 14:21:52
+predict_folds,0.0,0.00,cached files are reused if present,2026-11-09 14:22:01

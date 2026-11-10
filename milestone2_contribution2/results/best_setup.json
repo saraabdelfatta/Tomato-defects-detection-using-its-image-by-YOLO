@@ -1,0 +1,7 @@
+{
+  "name": "ensemble+threshold",
+  "ensemble": true,
+  "loss": null,
+  "threshold": 0.4508083035775808,
+  "rule": "higher val Defect recall at chosen threshold; ties: val Fresh recall, then val AUC"
+}
