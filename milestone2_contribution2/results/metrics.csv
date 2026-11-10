@@ -1,0 +1,9 @@
+step,model,role,threshold,accuracy,defect_precision,defect_recall,defect_f1,fresh_precision,fresh_recall,fresh_f1,roc_auc,tp,fn,fp,tn
+ref,MobileNetV2 (reference),reference,,0.9600,1.0000,0.9100,0.9500,0.9300,1.0000,0.9600,,,,,
+1,Baseline YOLO11n-cls (M1),main,0.5,0.9667,0.9388,0.9583,0.9485,0.9802,0.9706,0.9754,0.9958,92,4,6,198
+2,Class-weighted cross-entropy,main,0.5,0.9800,0.9688,0.9688,0.9688,0.9853,0.9853,0.9853,0.9988,93,3,3,201
+3,Class-weighted focal loss (gamma=2),main,0.5,0.9633,0.9208,0.9688,0.9442,0.9849,0.9608,0.9727,0.9965,93,3,8,196
+4,Weighted CE + val threshold,main,0.488568,0.9800,0.9688,0.9688,0.9688,0.9853,0.9853,0.9853,0.9988,93,3,3,201
+5,5-fold ensemble (mean prob) + val threshold,main,0.450808,0.9900,0.9895,0.9792,0.9843,0.9902,0.9951,0.9927,0.9978,94,2,1,203
+1b,Baseline + val threshold (supplementary),supplementary,0.439998,0.9667,0.9300,0.9688,0.9490,0.9850,0.9657,0.9752,0.9958,93,3,7,197
+5b,5-fold ensemble at 0.5 (supplementary),supplementary,0.5,0.9867,0.9894,0.9688,0.9789,0.9854,0.9951,0.9902,0.9978,93,3,1,203

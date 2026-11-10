@@ -1,0 +1,8 @@
+step,model,role,threshold,accuracy,defect_precision,defect_recall,defect_f1,fresh_precision,fresh_recall,fresh_f1,roc_auc,tp,fn,fp,tn
+1,Baseline YOLO11n-cls (M1),main,0.5,0.9899,1.0000,0.9684,0.9840,0.9854,1.0000,0.9926,0.9984,92,3,0,202
+2,Class-weighted cross-entropy,main,0.5,0.9933,0.9895,0.9895,0.9895,0.9950,0.9950,0.9950,0.9955,94,1,1,201
+3,Class-weighted focal loss (gamma=2),main,0.5,0.9899,0.9792,0.9895,0.9843,0.9950,0.9901,0.9926,0.9975,94,1,2,200
+4,Weighted CE + val threshold,main,0.488568,0.9933,0.9895,0.9895,0.9895,0.9950,0.9950,0.9950,0.9955,94,1,1,201
+5,5-fold ensemble (mean prob) + val threshold,main,0.450808,0.9966,1.0000,0.9895,0.9947,0.9951,1.0000,0.9975,0.9992,94,1,0,202
+1b,Baseline + val threshold (supplementary),supplementary,0.439998,0.9966,1.0000,0.9895,0.9947,0.9951,1.0000,0.9975,0.9984,94,1,0,202
+5b,5-fold ensemble at 0.5 (supplementary),supplementary,0.5,0.9966,1.0000,0.9895,0.9947,0.9951,1.0000,0.9975,0.9992,94,1,0,202

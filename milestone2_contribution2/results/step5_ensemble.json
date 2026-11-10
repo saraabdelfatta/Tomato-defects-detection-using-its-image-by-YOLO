@@ -1,0 +1,41 @@
+{
+  "members": [
+    "contribution_2/runs/calibration_folds/fold_0/weights/best.pt",
+    "contribution_2/runs/calibration_folds/fold_1/weights/best.pt",
+    "contribution_2/runs/calibration_folds/fold_2/weights/best.pt",
+    "contribution_2/runs/calibration_folds/fold_3/weights/best.pt",
+    "contribution_2/runs/calibration_folds/fold_4/weights/best.pt"
+  ],
+  "combination": "mean of Defect probabilities",
+  "threshold": 0.4508083035775808,
+  "val_at_threshold": {
+    "threshold": 0.4508083035775808,
+    "accuracy": 0.9966329966329966,
+    "defect_precision": 1.0,
+    "defect_recall": 0.9894736842105263,
+    "defect_f1": 0.9947089947089947,
+    "fresh_precision": 0.9950738916256158,
+    "fresh_recall": 1.0,
+    "fresh_f1": 0.9975308641975309,
+    "roc_auc": 0.999166232412715,
+    "tp": 94,
+    "fn": 1,
+    "fp": 0,
+    "tn": 202
+  },
+  "val_at_0.5": {
+    "threshold": 0.5,
+    "accuracy": 0.9966329966329966,
+    "defect_precision": 1.0,
+    "defect_recall": 0.9894736842105263,
+    "defect_f1": 0.9947089947089947,
+    "fresh_precision": 0.9950738916256158,
+    "fresh_recall": 1.0,
+    "fresh_f1": 0.9975308641975309,
+    "roc_auc": 0.999166232412715,
+    "tp": 94,
+    "fn": 1,
+    "fp": 0,
+    "tn": 202
+  }
+}
